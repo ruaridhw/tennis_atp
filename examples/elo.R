@@ -1,7 +1,13 @@
 files = list.files(pattern="atp_matches_[^_]*.csv")
 
-matches_raw= do.call("rbind", lapply(files, function(x) read.csv(x, sep=",")))
+library(data.table)
+matches_raw <- as.data.frame(rbindlist(lapply(files, fread), fill = T))
+#matches_raw= do.call("rbind", lapply(files, function(x) read.csv(x, sep=",")))
 matches <- matches_raw[c("winner_name","loser_name","tourney_level","tourney_date","match_num")]
+matches <- matches[matches$winner_name != "",]
+matches <- matches[matches$loser_name != "",]
+matches <- matches[!is.na(matches$winner_name),]
+matches <- matches[!is.na(matches$loser_name),]
 firstDate <- as.Date("1900-01-01")
 matches$tourney_date <- as.Date(as.character(matches$tourney_date),format='%Y%m%d', origin = "1900/01/01")
 
@@ -170,4 +176,12 @@ plotOldies <- function() {
     lines(bjorn$date,bjorn$ranking,type="l",col="purple",lty=6)
     lines(mats$date,mats$ranking,type="l",col="azure4",lty=2)
     lines(stefan$date,stefan$ranking,type="l",col="green",lty=3)
+}
+
+getMostRecentRanking <- function(){
+  outdf <- NULL
+  for(x in ls(playersToElo)){
+    outdf <- rbind(outdf, data.frame("player_name" = x, tail(playersToElo[[x]][c("date", "ranking")],n=1)))
+  }
+  outdf
 }
